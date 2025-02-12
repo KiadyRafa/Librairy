@@ -152,4 +152,66 @@ public class AuthorCrudOperations implements CrudOperations<Author> {
         }
         return authors;
     }
+
+    public List<Author> findByCriteriaWithPagination(List<Criteria> criteria, int page, int size) {
+        List<Author> authors = new ArrayList<>();
+        StringBuilder sql = new StringBuilder("SELECT * FROM author WHERE 1=1");
+
+        // Ajout des filtres
+        for (Criteria criterion : criteria) {
+            switch (criterion.getField()) {
+                case "name":
+                    sql.append(" AND name LIKE ?");
+                    break;
+                case "birth_date":
+                    sql.append(" AND birth_date = ?");
+                    break;
+                default:
+                    throw new IllegalArgumentException("Critère non supporté : " + criterion.getField());
+            }
+        }
+
+        // Ajout du tri (si `orderBy` est précisé dans un critère)
+        for (Criteria criterion : criteria) {
+            if (criterion.getOrderBy() != null) {
+                sql.append(" ORDER BY ").append(criterion.getOrderBy())
+                        .append(criterion.isAscending() ? " ASC" : " DESC");
+            }
+        }
+
+        // Ajout de la pagination (LIMIT et OFFSET)
+        sql.append(" LIMIT ? OFFSET ?");
+
+        try (Connection conn = DataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql.toString())) {
+
+            int index = 1;
+            for (Criteria criterion : criteria) {
+                switch (criterion.getField()) {
+                    case "name":
+                        pstmt.setString(index++, "%" + criterion.getValue() + "%");
+                        break;
+                    case "birth_date":
+                        pstmt.setDate(index++, Date.valueOf((LocalDate) criterion.getValue()));
+                        break;
+                }
+            }
+
+            pstmt.setInt(index++, size); // Nombre d'éléments par page
+            pstmt.setInt(index, Math.max(0, page) * size); // Décalage (OFFSET)
+
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                authors.add(new Author(
+                        rs.getInt("id"),
+                        rs.getString("name"),
+                        rs.getDate("birth_date").toLocalDate()
+                ));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return authors;
+    }
+
 }

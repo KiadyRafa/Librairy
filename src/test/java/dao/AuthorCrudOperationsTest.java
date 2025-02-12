@@ -91,6 +91,34 @@ public class AuthorCrudOperationsTest {
                 .allMatch(author -> author.getName().toLowerCase().contains("rado")
                         || author.getBirthDate().equals(LocalDate.of(2000, 1, 1))));
     }
+    @Test
+    void read_filtered_ordered_and_paginated() {
+        // Données de test
+        List<Criteria> criteria = new ArrayList<>();
+        criteria.add(new Criteria("name", "Rado"));
+        criteria.add(new Criteria("birth_date", LocalDate.of(1990, 1, 1)));
+
+        int page = 0;
+        int pageSize = 1;
+
+        // Récupérer d'abord l'auteur existant pour avoir le bon ID
+        List<Author> existingAuthors = subject.findAll();
+        Author expectedRado = existingAuthors.stream()
+                .filter(a -> a.getName().equals("Rado"))
+                .findFirst()
+                .orElseThrow();
+
+        // Appel de la méthode à tester
+        List<Author> actual = subject.findByCriteriaWithPagination(criteria, page, pageSize);
+
+        // Assertions
+        List<Author> expected = List.of(expectedRado);
+        assertEquals(expected, actual);
+        assertEquals(pageSize, actual.size());
+        assertEquals("Rado", actual.get(0).getName());
+        assertEquals(LocalDate.of(1990, 1, 1), actual.get(0).getBirthDate());
+    }
+
 
     @Test
     void read_authors_order_by_name_or_birthday_or_both() {

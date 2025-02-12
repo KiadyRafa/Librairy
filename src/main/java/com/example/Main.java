@@ -6,6 +6,7 @@ import com.example.librairy.entity.Author;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import com.example.librairy.dao.Criteria;
 
 public class Main {
     public static void main(String[] args) {
@@ -24,7 +25,7 @@ public class Main {
 
         //  Afficher tous les auteurs
         List<Author> authors = authorDAO.findAll();
-        System.out.println(" Liste des auteurs :");
+        System.out.println("Liste des auteurs :");
         for (Author author : authors) {
             System.out.println(author);
         }
@@ -45,9 +46,27 @@ public class Main {
 
         // Vérification après suppression
         List<Author> updatedAuthors = authorDAO.findAll();
-        System.out.println(" Liste des auteurs après suppression :");
+        System.out.println("Liste des auteurs après suppression :");
         for (Author author : updatedAuthors) {
             System.out.println(author);
         }
+
+        // Ajouter des auteurs pour tester
+        authorDAO.save(new Author(0, "J.K. Rowling", LocalDate.of(1965, 7, 31)));
+        authorDAO.save(new Author(0, "Albert Camus", LocalDate.of(1913, 11, 7)));
+        authorDAO.save(new Author(0, "George Orwell", LocalDate.of(1903, 6, 25)));
+
+        // Définir des critères : Filtrer par "o" dans le nom et trier par name ASC
+        List<Criteria> criteria = List.of(
+                new Criteria("name", "o", "name", true)
+        );
+
+        // Récupérer les auteurs page 1, avec 2 auteurs par page
+        List<Author> authorsPage1 = authorDAO.findByCriteriaWithPagination(criteria, 1, 2);
+        System.out.println("Page 1 des auteurs filtrés : " + authorsPage1);
+
+        // Récupérer les auteurs page 2
+        List<Author> authorsPage2 = authorDAO.findByCriteriaWithPagination(criteria, 2, 2);
+        System.out.println("Page 2 des auteurs filtrés : " + authorsPage2);
     }
 }
