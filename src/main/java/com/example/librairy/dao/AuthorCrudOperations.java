@@ -96,6 +96,16 @@ public class AuthorCrudOperations implements CrudOperations<Author> {
         }
     }
 
+    public void deleteAll() {
+        String sql = "DELETE FROM author";
+        try (Connection conn = DataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
     // Implémentation de findByCriteria
     public List<Author> findByCriteria(List<Criteria> criteria) {
         List<Author> authors = new ArrayList<>();

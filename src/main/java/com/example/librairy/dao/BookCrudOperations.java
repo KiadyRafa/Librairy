@@ -146,4 +146,13 @@ public class BookCrudOperations implements CrudOperations<Book> {
             LOGGER.log(Level.SEVERE, "Erreur lors de la suppression du livre", e);
         }
     }
+    public void deleteAll() {
+        String sql = "DELETE FROM author";
+        try (Connection conn = DataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
 }

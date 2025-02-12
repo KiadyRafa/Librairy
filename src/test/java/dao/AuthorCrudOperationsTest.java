@@ -3,6 +3,8 @@ package dao;
 import com.example.librairy.dao.AuthorCrudOperations;
 import com.example.librairy.dao.Criteria;
 import com.example.librairy.entity.Author;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
@@ -10,39 +12,47 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-
 import static org.junit.jupiter.api.Assertions.*;
 
 public class AuthorCrudOperationsTest {
+    AuthorCrudOperations subject;
 
-    AuthorCrudOperations subject = new AuthorCrudOperations();
+    @BeforeEach
+    void setUp() {
+        subject = new AuthorCrudOperations();
+
+        // Réinitialiser la base de données avant chaque test
+        subject.deleteAll();
+
+        // Ajouter des auteurs de test dans la base de données
+        subject.save(new Author(1, "JJR", LocalDate.of(2000, 1, 1)));
+        subject.save(new Author(2, "Rado", LocalDate.of(1990, 1, 1)));
+    }
+
+    @AfterEach
+    void tearDown() {
+        System.out.println(" Suppression de tous les auteurs après le test...");
+        subject.deleteAll();
+    }
 
     @Test
     void read_all_authors_ok() {
-
         Author expectedAuthor = authorJJR();
-
-
         List<Author> actual = subject.findAll();
-
-
         assertTrue(actual.contains(expectedAuthor));
     }
 
     @Test
     void read_author_by_id_ok() {
         Author expectedAuthor = authorJJR();
-
         Optional<Author> actual = subject.findById(expectedAuthor.getId());
-
         assertTrue(actual.isPresent());
         assertEquals(expectedAuthor, actual.get());
     }
 
     @Test
     void create_then_update_author_ok() {
-        var authors = newAuthor(2, "Random famous author", LocalDate.of(2000, 1, 1)); // ID en int
-
+        var authors = newAuthor(3, "Random famous author", LocalDate.of(2000, 1, 1));
         var actual = subject.save(authors);
 
         authors.setName("Updated Author");
@@ -54,15 +64,26 @@ public class AuthorCrudOperationsTest {
     }
 
     @Test
+    void delete_author_ok() {
+        Author authorToDelete = newAuthor(3, "Author to delete", LocalDate.of(1980, 1, 1));
+        subject.save(authorToDelete);
+
+        Optional<Author> foundAuthor = subject.findById(authorToDelete.getId());
+        assertTrue(foundAuthor.isPresent(), "L'auteur devrait exister avant la suppression");
+
+        subject.delete(authorToDelete);
+
+        Optional<Author> deletedAuthor = subject.findById(authorToDelete.getId());
+        assertFalse(deletedAuthor.isPresent(), "L'auteur devrait être supprimé");
+    }
+
+    @Test
     void read_authors_filter_by_name_or_birthday_between_intervals() {
         ArrayList<Criteria> criteria = new ArrayList<>();
         criteria.add(new Criteria("name", "rado"));
         criteria.add(new Criteria("birth_date", LocalDate.of(2000, 1, 1)));
-        List<Author> expected = List.of(
-                authorJJR(),
-                authorRado());
+        List<Author> expected = List.of(authorJJR(), authorRado());
 
-        // TODO: Implement findByCriteria in AuthorCrudOperations
         List<Author> actual = subject.findByCriteria(criteria);
 
         assertEquals(expected, actual);
@@ -79,18 +100,14 @@ public class AuthorCrudOperationsTest {
     }
 
     private Author authorRado() {
-        return newAuthor(2, "Rado", LocalDate.of(1990, 1, 1)); // ID en int
+        return newAuthor(2, "Rado", LocalDate.of(1990, 1, 1));
     }
 
     private Author authorJJR() {
-        Author expectedAuthor = new Author();
-        expectedAuthor.setId(1); // ID en int
-        expectedAuthor.setName("JJR");
-        expectedAuthor.setBirthDate(LocalDate.of(2000, 1, 1));
-        return expectedAuthor;
+        return newAuthor(1, "JJR", LocalDate.of(2000, 1, 1));
     }
 
-    private Author newAuthor(int id, String name, LocalDate birthDate) { // ID en int
+    private Author newAuthor(int id, String name, LocalDate birthDate) {
         Author author = new Author();
         author.setId(id);
         author.setName(name);
